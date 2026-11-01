@@ -12,7 +12,7 @@ Files in this folder:
 
 ## 1. Tokens
 
-shadcn's standard variables plus success and warning, in `src/styles/app.css`. This is the whole set (ADR-0006).
+shadcn's standard variables plus success and warning, in `src/styles/app.css`. This is the whole set.
 
 | Variable | Light | Dark | Use |
 |---|---|---|---|

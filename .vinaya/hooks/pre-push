@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+# >>> vinaya:managed:pre-push >>>
+# Vinaya pre-push gate. Runs branch/dispatch checks before the push leaves.
+# Forward git's own pre-push stdin (one "<local ref> <local sha> <remote
+# ref> <remote sha>" line per ref being pushed) so main-branch-refusal can
+# tell a tag-only push apart from one that also carries a branch ref.
+VINAYA_PUSH_REFS="$(cat)"
+export VINAYA_PUSH_REFS
+VINAYA_HOST=hook npx --yes @attalabs/vinaya@0.41.0 check --all --local || exit 1
+# The ready push (after approval) runs the repository's declared test
+# runner, .vinaya/test-runner: an executable run from the repository root
+# with no arguments, whose exit status is the verdict. A repository that
+# declares none runs no local tests, and says so.
+if [ "$VINAYA_PUSH_MODE" = "ready" ]; then
+  if [ -x .vinaya/test-runner ]; then
+    ./.vinaya/test-runner || { echo "vinaya pre-push: refused — the declared test runner (.vinaya/test-runner) failed"; exit 1; }
+  else
+    echo "vinaya pre-push: no local tests (no test runner declared at .vinaya/test-runner)"
+  fi
+fi
+# <<< vinaya:managed:pre-push <<<

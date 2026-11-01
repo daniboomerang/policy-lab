@@ -6,7 +6,7 @@ paths:
 # Policy engine
 
 ## Role
-The engine is the only place that knows both Saifuro's shapes and the UI's view models (ADR-0004). It evaluates a request against an agent's mandates in Saifuro's documented order, resolves several mandates, replays the 30-day simulation against a draft, and builds what components render. Facts about Saifuro come from the `saifuro-contract` rule; this rule fixes how the engine applies them.
+The engine is the only place that knows both Saifuro's shapes and the UI's view models. It evaluates a request against an agent's mandates in Saifuro's documented order, resolves several mandates, replays the 30-day simulation against a draft, and builds what components render. Facts about Saifuro come from the `saifuro-contract` rule; this rule fixes how the engine applies them.
 
 ## Rules
 - **Pure.** No `fetch`, no React, no globals, no `Date.now()`: pass `now` in so tests are deterministic.

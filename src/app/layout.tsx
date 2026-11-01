@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-dvh antialiased">
         <header className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-8">
           <span className="text-sm font-semibold">Policy Lab</span>
-          {/* The honesty badge (ADR-0001, ADR-0006): on every page, never dismissible, copy fixed. */}
+          {/* The honesty badge: on every page, never dismissible, copy fixed. */}
           <span className="rounded-sm bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
             Demo · sample data · not connected to Saifuro
           </span>

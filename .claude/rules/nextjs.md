@@ -15,24 +15,24 @@ paths:
 - `page.tsx`: the Policies tab (the policies table).
 - Policy page, draft, simulation, review, history and JSON view: routes under `src/app/policies/` as SPEC.md §1 describes.
 - `system/`: the component playground. Every component the app actually uses, in each of its states (default, hover and focus live, disabled, loading, empty, error, and every variant the app renders), on fixture data, with a light/dark switch at the top, plus the full screens on fixtures. One `Section` per component; a component is added to `/system` in the same PR that first uses it, and removed when the app stops using it. Never linked from the app's navigation.
-- `dev-stats/`: the development log (ADR-0007, ADR-0008). The page's server component reads the development snapshot and renders it first, with a line saying when it was taken; the client then polls the two live reads (GitHub and the Vinaya log) with TanStack Query and replaces it in place.
+- `dev-stats/`: the development log. The page's server component reads the development snapshot and renders it first, with a line saying when it was taken; the client then polls the two live reads (GitHub and the Vinaya log) with TanStack Query and replaces it in place.
 - No other routes in v1.
 
 ## Server and client components
 - Server components by default. Mark a file `"use client"` only when it needs state, effects, event handlers or browser APIs (the editor, the simulation, the assistant's form).
-- The engine runs where its caller runs. The simulation reruns in the browser as the draft changes; nothing about Saifuro needs a server (ADR-0001).
+- The engine runs where its caller runs. The simulation reruns in the browser as the draft changes; nothing about Saifuro needs a server.
 - `localStorage`, `matchMedia` and `window` exist only in the browser: read them in effects, never during render.
 
 ## The development record (`src/server/`), ported from Onchain Rewind
 - `src/server/github/`: the GitHub reader (this repo's issues, issue comments, pull requests and their commits, with optional `GITHUB_TOKEN`), its pure fold, `write-dev-snapshot.ts` (build step) and `check-dev-snapshot-leaks.ts` (build step). `src/server/vinaya/`: the Vinaya log reader (NDJSON, `…/events?after=<seq>`, `Authorization: Bearer VINAYA_LOG_READ_TOKEN`). The folds (dev record, GitHub dev record, the page's view) are pure and live in `src/engine/`, tested on fixtures.
 - Every module here starts with `import "server-only"`. Rewind's server functions become route handlers (`src/app/dev-stats/api/…/route.ts`) for the client's polling and direct calls from the page's server component; the logic is unchanged.
 - Change Rewind's hard-coded repository and log URL to this repo's. Keep its rules: a source that fails still renders what the other gives, with one message naming what is missing; log lines name the source and status only, never a token, error object, URL or header; recut or dropped Issues are skipped by one named list in the Vinaya reader.
-- **The snapshot** (ADR-0008): `bun run build` runs the writer before `next build` and the leak check after. The writer reads through the same two readers, never a mapping of its own; writes a gitignored JSON file under `src/server/github/`, never under `public/`; never fails the build (a missing token or failed read writes no snapshot and removes a stale one). The leak check fails the build if the snapshot carries a token's name or value, or `.next/static` a token's value.
+- **The snapshot**: `bun run build` runs the writer before `next build` and the leak check after. The writer reads through the same two readers, never a mapping of its own; writes a gitignored JSON file under `src/server/github/`, never under `public/`; never fails the build (a missing token or failed read writes no snapshot and removes a stale one). The leak check fails the build if the snapshot carries a token's name or value, or `.next/static` a token's value.
 
 ## Env
-- **No Saifuro variable exists.** Never add one. Saifuro data comes only from `src/saifuro/client.ts` in server code (ADR-0009).
+- **No Saifuro variable exists.** Never add one. Saifuro data comes only from `src/saifuro/client.ts` in server code.
 - **Pages render on the server.** Routes are server components that read through the Saifuro client and pass view models down; client components only where a screen reacts to input (the draft editor, the simulation, the table's sorting and filters). Writes are server actions.
-- `VINAYA_LOG_READ_TOKEN` and `GITHUB_TOKEN` (optional) are server-only, for `/dev-stats` (ADR-0007). Read them only in server code: modules that start with `import "server-only"`, server components and route handlers. Documented in `.env.example`; real values in `.env.local` (gitignored).
+- `VINAYA_LOG_READ_TOKEN` and `GITHUB_TOKEN` (optional) are server-only, for `/dev-stats`. Read them only in server code: modules that start with `import "server-only"`, server components and route handlers. Documented in `.env.example`; real values in `.env.local` (gitignored).
 - **Never prefix a secret with `NEXT_PUBLIC_`**: Next.js inlines `NEXT_PUBLIC_*` into the client bundle.
 - **Build check:** after `bun run build`, the last 12 characters of each token's value must not appear under `.next/static`. `ship-check` runs it and prints only "found" or "not found".
 
