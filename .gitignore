@@ -1,0 +1,31 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+*.tsbuildinfo
+# Written by `next dev`, `next build` and `next typegen`; differs between them, never committed
+next-env.d.ts
+
+# Agent worktrees (Vinaya tasks, Claude Code)
+.worktrees/
+.claude/worktrees/
+*.log
+.DS_Store
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Personal Claude Code notes
+CLAUDE.local.md
+
+# Vercel (written by `vercel link`)
+.vercel
+.env*.local
+
+# The development snapshot: a build output (ADR-0008), never committed
+src/server/github/dev-snapshot.json

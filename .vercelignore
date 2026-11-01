@@ -1,0 +1,13 @@
+# The Vercel CLI uses this file instead of .gitignore when both exist, so every
+# secret path .gitignore excludes is listed here too. Add a path to both together.
+.env
+.env.*
+.env.local
+*.pem
+*.key
+.worktrees/
+.claude/worktrees/
+.vercel
+CLAUDE.local.md
+node_modules/
+.next/

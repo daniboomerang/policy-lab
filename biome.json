@@ -1,0 +1,57 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": [
+      "**",
+      "!design",
+      "!spec",
+      "!src/saifuro/schema.d.ts",
+      "!next-env.d.ts",
+      "!.mcp.json",
+      "!vinaya.config.json"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": { "quoteStyle": "double", "semicolons": "always", "trailingCommas": "all" }
+  },
+  "css": {
+    "parser": { "tailwindDirectives": true }
+  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "@base-ui/react": "Use the shadcn components in src/components/ui (add one with the shadcn CLI) instead of importing Base UI directly."
+            },
+            "patterns": [
+              {
+                "group": ["@base-ui/react/**", "@base-ui-components/react", "@base-ui-components/react/**"],
+                "message": "Use the shadcn components in src/components/ui (add one with the shadcn CLI) instead of importing Base UI directly."
+              }
+            ]
+          }
+        }
+      },
+      "suspicious": { "noConsole": { "level": "warn", "options": { "allow": ["warn", "error"] } } }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/components/ui/**"],
+      "linter": { "rules": { "style": { "noRestrictedImports": "off" } } }
+    }
+  ]
+}

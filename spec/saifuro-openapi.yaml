@@ -1,0 +1,903 @@
+openapi: 3.1.0
+info:
+  title: Saifuro API
+  version: 1.0.0
+  description: >
+    Spend authorization for AI agents: mandates, signed verdicts, escrows,
+    webhooks, and the decision log. This spec mirrors the reference at
+    https://docs.saifuro.com/api/overview — where the two disagree, that is a
+    bug. Keys are issued at onboarding; there is no self-serve signup.
+    Every response, success or error, carries its trace identifier in an
+    X-Request-Id header; a version path stays available for at least twelve
+    months after its successor ships, with written notice to your named
+    contacts at least ninety days before any path is retired.
+  contact:
+    email: contact@saifuro.com
+    url: https://docs.saifuro.com
+servers:
+  - url: https://api.saifuro.com/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Authorizations
+  - name: Mandates
+  - name: Agents
+  - name: Escrows
+  - name: Webhooks
+  - name: Usage
+  - name: Enforcement
+
+paths:
+  /authorizations:
+    post:
+      tags: [Authorizations]
+      operationId: createAuthorization
+      summary: Ask whether an agent may spend; the answer comes back signed
+      description: >
+        A denial is a 201, not an error: the request reached the policy engine,
+        was counted as a decision, and landed in the log. Errors are for requests that never
+        got that far.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequest'
+      responses:
+        '201':
+          description: The decision, whatever the verdict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Decision'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /decisions:
+    get:
+      tags: [Authorizations]
+      operationId: listDecisions
+      summary: List decisions
+      parameters:
+        - { name: agent, in: query, schema: { type: string } }
+        - { name: mandate, in: query, schema: { type: string } }
+        - { name: verdict, in: query, schema: { $ref: '#/components/schemas/Verdict' } }
+        - { name: mode, in: query, schema: { type: string, enum: [observe, enforce] } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Page of decisions
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Decision' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /decisions/{id}:
+    get:
+      tags: [Authorizations]
+      operationId: getDecision
+      summary: Read one decision
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: The decision
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Decision' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /reviews/{id}/approve:
+    post:
+      tags: [Authorizations]
+      operationId: approveReview
+      summary: Resolve a review in favor of the spend
+      description: >
+        Issues a fresh allow decision with its own nonce and expiry;
+        `supersedes` points at the original review decision, which stays in the
+        log untouched. Refused with 400 invalid_request, issuing nothing and
+        leaving the review pending, when the agent is not active, the mandate is
+        revoked or past its expiry date, or the amount added to every allow under
+        the mandate in the last 30 days would exceed per_month. A review yields at
+        most one allow.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: The superseding allow decision
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Decision' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /reviews/{id}/deny:
+    post:
+      tags: [Authorizations]
+      operationId: denyReview
+      summary: Resolve a review against the spend
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: The review, closed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Review' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /mandates:
+    post:
+      tags: [Mandates]
+      operationId: createMandate
+      summary: Write an agent's authority down
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MandateCreate' }
+      responses:
+        '201':
+          description: The mandate as the system holds it
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Mandate' }
+        default:
+          $ref: '#/components/responses/Error'
+    get:
+      tags: [Mandates]
+      operationId: listMandates
+      summary: List mandates
+      parameters:
+        - { name: agent, in: query, schema: { type: string } }
+        - { name: principal, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string, enum: [active, revoked, expired] } }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Page of mandates
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Mandate' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /mandates/{id}:
+    get:
+      tags: [Mandates]
+      operationId: getMandate
+      summary: Read one mandate
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: The mandate
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Mandate' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /mandates/{id}/revoke:
+    post:
+      tags: [Mandates]
+      operationId: revokeMandate
+      summary: Revoke — effective on the agent's next request
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: The mandate, revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Mandate' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /agents:
+    post:
+      tags: [Agents]
+      operationId: createAgent
+      summary: Register an agent; its key is shown once
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, description: Lowercase slug; becomes part of the id }
+                metadata: { $ref: '#/components/schemas/Metadata' }
+      responses:
+        '201':
+          description: The agent, with its one-time agent_key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentWithKey' }
+        default:
+          $ref: '#/components/responses/Error'
+    get:
+      tags: [Agents]
+      operationId: listAgents
+      summary: List agents
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [active, disabled] } }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Page of agents
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Agent' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /agents/{id}:
+    get:
+      tags: [Agents]
+      operationId: getAgent
+      summary: Read one agent
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: The agent
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Agent' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /agents/{id}/keys/rotate:
+    post:
+      tags: [Agents]
+      operationId: rotateAgentKey
+      summary: New key, shown once; the old key stops at that moment
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: The agent, with its new one-time agent_key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentWithKey' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /agents/{id}/disable:
+    post:
+      tags: [Agents]
+      operationId: disableAgent
+      summary: Mandates stop matching; next request returns deny_no_mandate
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: The agent, disabled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Agent' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /agents/{id}/enable:
+    post:
+      tags: [Agents]
+      operationId: enableAgent
+      summary: Re-enable a disabled agent
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: The agent, active again
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Agent' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /escrows:
+    post:
+      tags: [Escrows]
+      operationId: createEscrow
+      summary: Run the evaluation, then deploy the contract
+      description: >
+        The policy evaluation runs first, with the seller as recipient and the
+        category escrow (the category check is skipped): if the verdict is not
+        allow, the response is that decision and nothing is locked; approving
+        such a review creates no escrow. There is no release or
+        refund endpoint — the contract decides, not us.
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EscrowCreate' }
+      responses:
+        '201':
+          description: The escrow, state created, with the contract address
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Escrow' }
+        default:
+          $ref: '#/components/responses/Error'
+    get:
+      tags: [Escrows]
+      operationId: listEscrows
+      summary: List escrows
+      parameters:
+        - { name: agent, in: query, schema: { type: string } }
+        - { name: seller, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { $ref: '#/components/schemas/EscrowState' } }
+        - { name: disputed, in: query, schema: { type: boolean } }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Page of escrows
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Escrow' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /escrows/{id}:
+    get:
+      tags: [Escrows]
+      operationId: getEscrow
+      summary: Read one escrow
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: The escrow
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Escrow' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /escrows/{id}/attest:
+    post:
+      tags: [Escrows]
+      operationId: attestEscrow
+      summary: Named attestor confirms the condition; release runs
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: The escrow, delivered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Escrow' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /escrows/{id}/dispute:
+    post:
+      tags: [Escrows]
+      operationId: disputeEscrow
+      summary: Flag the deal; fires escrow.disputed, changes nothing else
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: The escrow, disputed flag set
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Escrow' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /webhooks:
+    post:
+      tags: [Webhooks]
+      operationId: createWebhook
+      summary: Register an endpoint
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, events]
+              properties:
+                url: { type: string, format: uri }
+                events:
+                  type: array
+                  items: { $ref: '#/components/schemas/EventType' }
+      responses:
+        '201':
+          description: The endpoint
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookEndpoint' }
+        default:
+          $ref: '#/components/responses/Error'
+    get:
+      tags: [Webhooks]
+      operationId: listWebhooks
+      summary: List endpoints
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Page of endpoints
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Page'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/WebhookEndpoint' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /webhooks/{id}:
+    get:
+      tags: [Webhooks]
+      operationId: getWebhook
+      summary: Read one endpoint
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: The endpoint
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WebhookEndpoint' }
+        default:
+          $ref: '#/components/responses/Error'
+    delete:
+      tags: [Webhooks]
+      operationId: deleteWebhook
+      summary: Stop delivery to this endpoint
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '204':
+          description: Deleted
+        default:
+          $ref: '#/components/responses/Error'
+
+  /webhooks/{id}/ping:
+    post:
+      tags: [Webhooks]
+      operationId: pingWebhook
+      summary: Send a ping event to test the path end to end
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Ping queued
+        default:
+          $ref: '#/components/responses/Error'
+
+  /usage:
+    get:
+      tags: [Usage]
+      operationId: getUsage
+      summary: Decision counts by verdict over a date window
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - { name: group_by, in: query, schema: { type: string, enum: [agent, category, verdict, protocol, day] } }
+      responses:
+        '200':
+          description: Usage over the window
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UsageReport' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /exports/records:
+    get:
+      tags: [Usage]
+      operationId: exportRecords
+      summary: Stream the decision log as NDJSON, one record per line
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: NDJSON stream of Decision records, verdict_token included
+          content:
+            application/x-ndjson:
+              schema: { $ref: '#/components/schemas/Decision' }
+        default:
+          $ref: '#/components/responses/Error'
+
+  /enforcement:
+    get:
+      tags: [Enforcement]
+      operationId: getEnforcement
+      summary: Read the enforcement state for this environment
+      responses:
+        '200':
+          description: The current mode and when it began
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnforcementState' }
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [Enforcement]
+      operationId: setEnforcement
+      summary: Set this environment's mode, observe or enforce, in one call
+      description: >
+        Organization key only; effective on the next decision, which records
+        the mode. The mode tells your integration whether to stop payments
+        whose verdict is not allow; Saifuro blocks nothing in either mode. The
+        key's environment decides which environment changes, and the change
+        itself is a record.
+      parameters: [ { $ref: '#/components/parameters/IdempotencyKey' } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode: { type: string, enum: [observe, enforce] }
+      responses:
+        '200':
+          description: The state after the call
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EnforcementState' }
+        default:
+          $ref: '#/components/responses/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >
+        Organization keys (sk_live_/sk_sandbox_) manage objects and read
+        everything; agent keys (ak_live_/ak_sandbox_) create authorization
+        requests and read their own decisions. Keys are issued at onboarding.
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Scoped to the API key that sends it. Within 24h, the same API key, Idempotency-Key and body return the stored result (401, 403, 429 and 5xx are not stored); the same key with a different body returns 409.
+      schema: { type: string, maxLength: 255 }
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  headers:
+    X-Request-Id:
+      description: The request's trace identifier, on every response, success or error — quote it to support.
+      schema: { type: string, examples: [req_8a21] }
+    Idempotency-Replayed:
+      description: true when the response is the stored result of an earlier request with the same Idempotency-Key.
+      schema: { type: string, enum: ['true'] }
+    Retry-After:
+      description: On a 429 — seconds to wait before retrying.
+      schema: { type: integer }
+
+  responses:
+    Error:
+      description: Transport-level error — a denial is not one of these
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/X-Request-Id'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          properties:
+            code:
+              type: string
+              enum: [invalid_request, unauthorized, forbidden, not_found, idempotency_conflict, rate_limited, server_error]
+            message: { type: string }
+            request_id: { type: string, examples: [req_8a21] }
+
+    Metadata:
+      type: object
+      maxProperties: 20
+      additionalProperties: { type: string, maxLength: 500 }
+
+    Verdict:
+      type: string
+      enum: [allow, review, deny_limit, deny_velocity, deny_category, deny_expired, deny_revoked, deny_no_mandate]
+
+    Protocol:
+      type: string
+      enum: [x402, mpp, acp, ap2, card]
+
+    AuthorizationRequest:
+      type: object
+      required: [amount, currency, recipient, category]
+      properties:
+        amount: { type: number, examples: [340.00] }
+        currency: { type: string, maxLength: 128, examples: [USD] }
+        recipient: { type: string, maxLength: 1024, examples: ['vendor:acme_saas'] }
+        category: { type: string, maxLength: 128, examples: [saas] }
+        protocol: { $ref: '#/components/schemas/Protocol' }
+        agent:
+          type: string
+          description: Required on an organization key; ignored on an agent key.
+        metadata: { $ref: '#/components/schemas/Metadata' }
+
+    RequestSpec:
+      type: object
+      required: [agent, amount, recipient, category]
+      properties:
+        agent: { type: string, examples: [agt_procurement_01] }
+        amount: { type: number }
+        currency: { type: string, description: "Currency code exactly as the request stated it. Present on every decision issued since signed currency was introduced; older stored decisions do not have it.", examples: [USD] }
+        recipient: { type: string }
+        category: { type: string }
+
+    Decision:
+      type: object
+      required: [decision, request, verdict, reason, policy_version, nonce, mode, issued_at, verdict_token]
+      properties:
+        decision: { type: string, examples: [dec_5b2e] }
+        request: { $ref: '#/components/schemas/RequestSpec' }
+        verdict: { $ref: '#/components/schemas/Verdict' }
+        reason: { type: string, examples: ['amount 720.00 exceeds per_transaction limit 500.00'] }
+        mandate:
+          type: string
+          description: Absent on deny_no_mandate.
+        policy_version: { type: string, examples: [pol_2026-08-12.1] }
+        nonce: { type: string, examples: [n_9d02c6e4] }
+        mode: { type: string, enum: [observe, enforce] }
+        issued_at: { type: string, format: date-time }
+        expires_at:
+          type: string
+          format: date-time
+          description: On allow only — five minutes after issue.
+        verdict_token:
+          type: string
+          description: An ES256 JWT of the request echo, verdict, mandate, policy_version, nonce and, on a review approval, supersedes (reason, mode, metadata and review are not signed), verifiable against https://verdicts.saifuro.com/.well-known/jwks.json
+        supersedes:
+          type: string
+          description: On a review-approval decision only — the review decision it resolves.
+        review: { $ref: '#/components/schemas/Review' }
+        metadata: { $ref: '#/components/schemas/Metadata' }
+
+    Review:
+      type: object
+      required: [review, waits_for, expires_at, status]
+      properties:
+        review: { type: string, examples: [rev_3c17] }
+        waits_for: { type: string, examples: ['role:procurement_lead'] }
+        expires_at: { type: string, format: date-time }
+        status: { type: string, enum: [pending, approved, denied, expired] }
+
+    MandateCreate:
+      type: object
+      required: [principal, agent, limits, categories, expires]
+      properties:
+        principal: { type: string, examples: ['role:procurement_lead'] }
+        agent: { type: string }
+        limits:
+          type: object
+          required: [per_transaction, currency]
+          properties:
+            per_transaction: { type: number }
+            per_month: { type: number }
+            currency: { type: string, maxLength: 128 }
+        categories:
+          type: array
+          items: { type: string, maxLength: 128 }
+        review_above: { type: number }
+        expires: { type: string, format: date }
+        escrow:
+          type: object
+          properties:
+            required_above: { type: string, examples: ['1000 USDC'] }
+
+    Mandate:
+      allOf:
+        - $ref: '#/components/schemas/MandateCreate'
+        - type: object
+          required: [mandate, status]
+          properties:
+            mandate: { type: string, examples: [mnd_7f3a] }
+            status: { type: string, enum: [active, revoked, expired] }
+            created_at: { type: string, format: date-time }
+            revoked_at: { type: string, format: date-time }
+
+    Agent:
+      type: object
+      required: [agent, name, status, created_at]
+      properties:
+        agent: { type: string, examples: [agt_procurement_01] }
+        name: { type: string }
+        status: { type: string, enum: [active, disabled] }
+        created_at: { type: string, format: date-time }
+        metadata: { $ref: '#/components/schemas/Metadata' }
+
+    AgentWithKey:
+      allOf:
+        - $ref: '#/components/schemas/Agent'
+        - type: object
+          required: [agent_key]
+          properties:
+            agent_key:
+              type: string
+              description: Shown once, never retrievable afterwards.
+
+    EscrowState:
+      type: string
+      enum: [created, funded, delivered, released, refunded]
+
+    EscrowCreate:
+      type: object
+      required: [seller, amount, currency, chain, condition]
+      properties:
+        agent:
+          type: string
+          description: The buyer; required on an organization key.
+        seller: { type: string, maxLength: 1024, examples: [agt_datamart_02] }
+        amount: { type: number }
+        currency: { type: string, enum: [USDC] }
+        chain: { type: string, enum: [base, solana] }
+        condition:
+          type: object
+          required: [type, deadline]
+          properties:
+            type: { type: string, enum: [attestation, deadline] }
+            attestor: { type: string, description: Required when type is attestation. }
+            deadline: { type: string, format: date-time }
+        arbiter:
+          type: string
+          description: A third party both sides chose, written in before funding.
+        metadata: { $ref: '#/components/schemas/Metadata' }
+
+    Escrow:
+      allOf:
+        - $ref: '#/components/schemas/EscrowCreate'
+        - type: object
+          required: [escrow, state, decision, contract, disputed, created_at]
+          properties:
+            escrow: { type: string, examples: [esc_2f8d] }
+            state: { $ref: '#/components/schemas/EscrowState' }
+            decision: { type: string, description: The authorization that allowed the deal. }
+            contract:
+              type: string
+              description: On-chain address holding the funds — checkable on the chain itself.
+              examples: ['base:0x5f3a...9c1e']
+            disputed: { type: boolean }
+            created_at: { type: string, format: date-time }
+            funded_at: { type: string, format: date-time }
+            closed_at: { type: string, format: date-time }
+
+    EventType:
+      type: string
+      enum:
+        - decision.review_pending
+        - decision.resolved
+        - mandate.revoked
+        - mandate.expiring
+        - escrow.funded
+        - escrow.delivered
+        - escrow.released
+        - escrow.refunded
+        - escrow.disputed
+        - ping
+
+    WebhookEndpoint:
+      type: object
+      required: [webhook, url, events, status, created_at]
+      properties:
+        webhook: { type: string, examples: [whk_4b09] }
+        url: { type: string, format: uri }
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/EventType' }
+        status: { type: string, enum: [active] }
+        created_at: { type: string, format: date-time }
+
+    EnforcementState:
+      type: object
+      required: [mode, since]
+      properties:
+        mode: { type: string, enum: [observe, enforce] }
+        since: { type: string, format: date-time }
+
+    Page:
+      type: object
+      required: [data, has_more]
+      properties:
+        data: { type: array, items: {} }
+        has_more: { type: boolean }
+        next_cursor: { type: string }
+
+    UsageReport:
+      type: object
+      required: [from, to, data]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        group_by: { type: string }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              agent: { type: string }
+              category: { type: string }
+              protocol: { type: string }
+              day: { type: string, format: date }
+              evaluated: { type: integer }
+              verdicts:
+                type: object
+                additionalProperties: { type: integer }
+              settled_volume: { type: number }
+              currency: { type: string }

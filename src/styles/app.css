@@ -1,0 +1,122 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * shadcn/ui's standard theme variables, plus success and warning, set to Saifuro's console palette
+ * (light: design/marketing-literal-palette.txt; dark: design/docs-theme-vars.txt). This is the whole
+ * token set: no colour, size or font exists outside it. Components use the Tailwind utilities these
+ * generate (bg-background, text-muted-foreground, border-border, ring-ring, bg-success …).
+ */
+
+@theme inline {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --radius: 6px;
+  --background: #ffffff;
+  --foreground: #0f1e33;
+  --card: #ffffff;
+  --card-foreground: #0f1e33;
+  --popover: #ffffff;
+  --popover-foreground: #0f1e33;
+  --primary: #1355b4;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f1e33;
+  --muted: #f1f5f9;
+  --muted-foreground: #5c6f88;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f1e33;
+  --destructive: #b4231f;
+  --success: #15803d;
+  --success-foreground: #ffffff;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+  --border: #dfe8f1;
+  --input: #d7e1ec;
+  --ring: #2e9be0;
+  --chart-1: #1355b4;
+  --chart-2: #2e9be0;
+  --chart-3: #15803d;
+  --chart-4: #b45309;
+  --chart-5: #b4231f;
+}
+
+.dark {
+  --background: #0b1421;
+  --foreground: #f3f5f8;
+  --card: #122032;
+  --card-foreground: #f3f5f8;
+  --popover: #122032;
+  --popover-foreground: #f3f5f8;
+  --primary: #46a0e2;
+  --primary-foreground: #0b1421;
+  --secondary: #1c293d;
+  --secondary-foreground: #f3f5f8;
+  --muted: #1c293d;
+  --muted-foreground: #97a7b7;
+  --accent: #1c293d;
+  --accent-foreground: #f3f5f8;
+  --destructive: #f87171;
+  --success: #4ade80;
+  --success-foreground: #0b1421;
+  --warning: #fbbf24;
+  --warning-foreground: #0b1421;
+  --border: #273445;
+  --input: #273445;
+  --ring: #46a0e2;
+  --chart-1: #46a0e2;
+  --chart-2: #85baec;
+  --chart-3: #4ade80;
+  --chart-4: #fbbf24;
+  --chart-5: #f87171;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background font-sans text-foreground;
+  }
+}

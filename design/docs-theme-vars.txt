@@ -1,0 +1,161 @@
+### :root,:host  (76)
+  --font-mono: var(--font-mono-brand), ui-monospace, monospace
+  --spacing: .25rem
+  --breakpoint-sm: 40rem
+  --container-sm: 24rem
+  --container-md: 28rem
+  --text-xs: .75rem
+  --text-xs--line-height: calc(1 / .75)
+  --text-sm: .875rem
+  --text-sm--line-height: calc(1.25 / .875)
+  --text-base: 1rem
+  --text-base--line-height: calc(1.5 / 1)
+  --text-lg: 1.125rem
+  --text-lg--line-height: calc(1.75 / 1.125)
+  --text-2xl: 1.5rem
+  --text-2xl--line-height: calc(2 / 1.5)
+  --text-3xl: 1.875rem
+  --text-6xl: 3.75rem
+  --text-6xl--line-height: 1
+  --font-weight-medium: 500
+  --font-weight-semibold: 600
+  --font-weight-bold: 700
+  --tracking-tight: -.025em
+  --tracking-wider: .05em
+  --leading-relaxed: 1.625
+  --radius-sm: .25rem
+  --radius-md: .375rem
+  --radius-lg: .375rem
+  --ease-out: cubic-bezier(0, 0, .2, 1)
+  --animate-pulse: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite
+  --blur-xs: 4px
+  --blur-sm: 8px
+  --blur-md: 12px
+  --blur-lg: 16px
+  --default-transition-duration: .15s
+  --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1)
+  --default-font-family: var(--font-geist), system-ui, sans-serif
+  --default-mono-font-family: var(--font-mono-brand), ui-monospace, monospace
+  --color-fd-background: #f5f5f5
+  --color-fd-foreground: #0a0a0a
+  --color-fd-muted: #f5f5f5
+  --color-fd-muted-foreground: #737373
+  --color-fd-popover: #fafafa
+  --color-fd-popover-foreground: #272727
+  --color-fd-card: #f1f1f1
+  --color-fd-card-foreground: #0a0a0a
+  --color-fd-border: #cccccc80
+  --color-fd-primary: #171717
+  --color-fd-primary-foreground: #fafafa
+  --color-fd-secondary: #ededed
+  --color-fd-secondary-foreground: #171717
+  --color-fd-accent: #d1d1d180
+  --color-fd-accent-foreground: #171717
+  --color-fd-ring: #a3a3a3
+  --color-fd-overlay: #0003
+  --color-fd-info: #3080ff
+  --color-fd-warning: #f99c00
+  --color-fd-error: #fb2c36
+  --color-fd-success: #00c758
+  --color-fd-idea: #ee7e00
+  --color-fd-diff-remove: #c80a641f
+  --color-fd-diff-remove-symbol: #e60a64
+  --color-fd-diff-add: #0eb4641a
+  --color-fd-diff-add-symbol: #0ac864
+  --animate-fd-fade-in: fd-fade-in .3s ease
+  --animate-fd-fade-out: fd-fade-out .3s ease
+  --animate-fd-dialog-in: fd-dialog-in .3s cubic-bezier(.16, 1, .3, 1)
+  --animate-fd-dialog-out: fd-dialog-out .3s cubic-bezier(.16, 1, .3, 1)
+  --animate-fd-popover-in: fd-popover-in .1s ease
+  --animate-fd-popover-out: fd-popover-out .1s ease
+  --animate-fd-sidebar-in: fd-sidebar-in .25s ease
+  --animate-fd-sidebar-out: fd-sidebar-out .25s ease
+  --color-fd-info: lab(54.1736% 13.3369 -74.6839)
+  --color-fd-warning: lab(72.7183% 31.8672 97.9407)
+  --color-fd-error: lab(55.4814% 75.0732 48.8528)
+  --color-fd-success: lab(70.5521% -66.5147 45.8073)
+  --color-fd-idea: lab(64.7587% 46.0756 133.272)
+### .prose  (19)
+  --tw-prose-size: 1
+  --tw-prose-body: #0a0a0ae6
+  --tw-prose-body: color-mix(in oklab, var(--color-fd-foreground) 90%, transparent)
+  --tw-prose-headings: var(--color-fd-foreground)
+  --tw-prose-lead: var(--color-fd-foreground)
+  --tw-prose-links: var(--color-fd-foreground)
+  --tw-prose-bold: var(--color-fd-foreground)
+  --tw-prose-counters: var(--color-fd-muted-foreground)
+  --tw-prose-bullets: var(--color-fd-muted-foreground)
+  --tw-prose-hr: var(--color-fd-border)
+  --tw-prose-quotes: var(--color-fd-foreground)
+  --tw-prose-quote-borders: var(--color-fd-border)
+  --tw-prose-captions: var(--color-fd-foreground)
+  --tw-prose-code: var(--color-fd-foreground)
+  --tw-prose-th-borders: var(--color-fd-border)
+  --tw-prose-td-borders: var(--color-fd-border)
+  --tw-prose-kbd: var(--color-fd-foreground)
+  --tw-prose-kbd-shadows: #17171780
+  --tw-prose-kbd-shadows: color-mix(in oklab, var(--color-fd-primary) 50%, transparent)
+### .dark  (37)
+  --color-fd-background: #121212
+  --color-fd-foreground: #ebebeb
+  --color-fd-muted: #212121
+  --color-fd-muted-foreground: #b3b3b3cc
+  --color-fd-popover: #1e1e1e
+  --color-fd-popover-foreground: #dedede
+  --color-fd-card: #191919
+  --color-fd-card-foreground: #fafafa
+  --color-fd-border: #6663
+  --color-fd-primary: #fafafa
+  --color-fd-primary-foreground: #171717
+  --color-fd-secondary: #212121
+  --color-fd-secondary-foreground: #ebebeb
+  --color-fd-accent: #6868684d
+  --color-fd-accent-foreground: #e6e6e6
+  --color-fd-ring: #8c8c8c
+  --color-fd-overlay: #0003
+  --color-fd-primary: #46a0e2
+  --color-fd-accent: #1c293d
+  --color-fd-accent-foreground: #eaeff5
+  --color-fd-background: #0b1421
+  --color-fd-foreground: #f3f5f8
+  --color-fd-muted: #122032
+  --color-fd-muted-foreground: #97a7b7
+  --color-fd-border: #273445
+  --color-fd-card: #122032
+  --color-fd-ring: #46a0e2
+  --color-fd-primary: lab(62.6079% -11.3172 -42.2041)
+  --color-fd-accent: lab(16.2772% -.837743 -14.2274)
+  --color-fd-accent-foreground: lab(94.1916% -1.09133 -3.56996)
+  --color-fd-background: lab(6.0677% -.535153 -10.2859)
+  --color-fd-foreground: lab(96.5162% -.553399 -1.78931)
+  --color-fd-muted: lab(11.6506% -1.20977 -13.9869)
+  --color-fd-muted-foreground: lab(67.4805% -2.99993 -10.5739)
+  --color-fd-border: lab(20.9818% -1.536 -12.4527)
+  --color-fd-card: lab(11.6506% -1.20977 -13.9869)
+  --color-fd-ring: lab(62.6079% -11.3172 -42.2041)
+### .dark #nd-sidebar  (3)
+  --color-fd-muted: #292929
+  --color-fd-secondary: #2e2e2e
+  --color-fd-muted-foreground: #b8b8b8
+### :root  (21)
+  --fd-sidebar-drawer-offset: 100%
+  --color-fd-primary: #1351a6
+  --color-fd-accent: #e5f0fc
+  --color-fd-accent-foreground: #102239
+  --color-fd-background: #fff
+  --color-fd-foreground: #122032
+  --color-fd-muted: #f3f7fb
+  --color-fd-muted-foreground: #4c5c71
+  --color-fd-border: #dee5ee
+  --color-fd-card: #fff
+  --color-fd-ring: #1351a6
+  --color-fd-primary: lab(34.8466% 7.25129 -52.0513)
+  --color-fd-accent: lab(94.18% -2.12187 -7.1074)
+  --color-fd-accent-foreground: lab(12.7317% -.923738 -17.3811)
+  --color-fd-background: lab(100% 0 0)
+  --color-fd-foreground: lab(11.6506% -1.20977 -13.9869)
+  --color-fd-muted: lab(97.0945% -.770748 -2.50274)
+  --color-fd-muted-foreground: lab(38.3891% -2.3063 -14.2671)
+  --color-fd-border: lab(90.7073% -1.50895 -4.98763)
+  --color-fd-card: lab(100% 0 0)
+  --color-fd-ring: lab(34.8466% 7.25129 -52.0513)
