@@ -34,13 +34,14 @@ Versions are pinned exactly in `package.json`: Next.js 16.4, React 19.3, Tailwin
   - `design/`, `spec/`, the generated `src/saifuro/schema.d.ts` and `next-env.d.ts`, and the Vinaya-managed `.mcp.json` and `vinaya.config.json` excluded (Vinaya rewrites both in its own formatting on `init` and `upgrade`, and `vinaya doctor` compares `.mcp.json` byte for byte, so Biome must not reformat them).
 - **Import ban:** `noRestrictedImports` bans `@base-ui/react`, every `@base-ui/react/*` subpath and the old `@base-ui-components/react` name everywhere except `src/components/ui/**`. This is a lint error, not a convention.
 - **`console.log` is a warning,** and CI treats warnings as errors. `console.warn` and `console.error` are allowed.
-- **CI** is `.github/workflows/checks.yml`, kept deliberately light. It runs on every PR and every push to `main`, with three parallel checks:
+- **CI** is `.github/workflows/checks.yml`, kept deliberately light. It runs on every PR and every push to `main`, with four parallel checks:
   - **Check format** (Biome)
   - **Check lint** (Biome, warnings count as errors)
   - **Check types** (`next typegen`, then TypeScript)
+  - **Check tests** (Vitest, `bun run test`)
 
-  An aggregate job named `checks` passes only when all three pass. It's the one check branch protection should require.
-- **Vinaya's generated workflows** (`vinaya-*.yml`) run alongside it after install.
+  An aggregate job named `checks` passes only when all four pass. It's the one check branch protection should require.
+- **Vinaya's generated workflows** (`vinaya-*.yml`) run alongside it.
 - **Before pushing:** run `bun run fix`, then `bun run check`.
 
 ## Layout
@@ -77,13 +78,13 @@ Every task must leave these green.
 - `bun run check`: all three, the same as CI
 - `bun run fix`: `biome check --write .` (formats and organises imports; run it after every `shadcn add`)
 - `bun run test`: Vitest. Use `bun run test`, not bare `bun test`: bare `bun test` runs Bun's own test runner, which has no happy-dom environment and skips `vitest.config.ts`.
-- `bun run build`: production build. Once `/dev-stats` lands it becomes, as in Onchain Rewind: write the development snapshot, `next build`, then the snapshot leak check (ADR-0008).
+- `bun run build`: production build. Once `/dev-stats` lands it becomes, as in Onchain Rewind: write the development snapshot, `next build`, then the snapshot leak check.
 
 ## Rules
 
-1. **No Saifuro calls, no Saifuro keys.** No request reaches `api.saifuro.com`, and nothing reads a Saifuro key (`sk_*`, `ak_*`), in code, tests, scripts or CI. Saifuro data is read and written only through `src/saifuro/client.ts`, whose transport is `mockFetch` (ADR-0009); never pass it the global `fetch`. Every Saifuro-shaped object is sample data (fixtures in tests and on `/system`), and the UI says so: the honesty badge "Demo · sample data · not connected to Saifuro" is in the chrome of every page (ADR-0001). Agents never fetch the live OpenAPI or docs during a task; the vendored snapshot is the contract.
-2. **Saifuro types come only from the generated schema.** Import Saifuro shapes from `src/saifuro/types.ts`, which aliases `schema.d.ts`. Never retype a Saifuro field by hand. A schema change is a new vendored snapshot plus `bun run gen:types` in the same PR (ADR-0002).
-3. **Components read view models from the engine, never raw API shapes.** Components never import `src/saifuro/schema.d.ts` or render a `Mandate` or `Decision` directly. Mapping, evaluation and simulation live in `src/engine/` as pure, unit-tested functions (ADR-0004). The one exception is the JSON view, which shows the exact mandate bodies, and it gets them from the engine too.
+1. **No Saifuro calls, no Saifuro keys.** No request reaches `api.saifuro.com`, and nothing reads a Saifuro key (`sk_*`, `ak_*`), in code, tests, scripts or CI. Saifuro data is read and written only through `src/saifuro/client.ts`, whose transport is `mockFetch`; never pass it the global `fetch`. Every Saifuro-shaped object is sample data (fixtures in tests and on `/system`), and the UI says so: the honesty badge "Demo · sample data · not connected to Saifuro" is in the chrome of every page. Agents never fetch the live OpenAPI or docs during a task; the vendored snapshot is the contract.
+2. **Saifuro types come only from the generated schema.** Import Saifuro shapes from `src/saifuro/types.ts`, which aliases `schema.d.ts`. Never retype a Saifuro field by hand. A schema change is a new vendored snapshot plus `bun run gen:types` in the same PR.
+3. **Components read view models from the engine, never raw API shapes.** Components never import `src/saifuro/schema.d.ts` or render a `Mandate` or `Decision` directly. Mapping, evaluation and simulation live in `src/engine/` as pure, unit-tested functions. The one exception is the JSON view, which shows the exact mandate bodies, and it gets them from the engine too.
 4. **shadcn components in `src/components/ui/`, and no raw Base UI imports outside it.** Components come from shadcn's Base UI flavour, added with the CLI only when a screen needs one; feature code imports them from `@/components/ui/*`. Base UI composes through its `render` prop, never `asChild`. Run `bun run fix` after `shadcn add`.
 5. **React 19 idioms.** `ref` is a normal prop: no `forwardRef`. Use `use()` for context.
 6. **Tokens only, no extra colours.** Colours come only from shadcn's variables in `src/styles/app.css` (`background` … `chart-5`, plus `success` and `warning`) through their Tailwind utilities, and sizes, radii and type from Tailwind's default scale. No raw hex, no arbitrary values (`bg-[#…]`, `text-[13px]`), no new variables. A need the set can't meet is a SPEC.md §10 question for the Principal, not a new token.
@@ -108,7 +109,7 @@ Conventions that apply to certain paths live in `.claude/rules/<topic>.md`, with
 | [`design-system`](.claude/rules/design-system.md) | `src/components/**`, `src/styles/**` | shadcn components, the token set, outcome words, responsive to 390px, accessibility |
 | [`nextjs`](.claude/rules/nextjs.md) | `src/app/**`, `src/server/**`, `next.config.ts`, `vercel.json` | routes, `/system`, `/dev-stats` readers and snapshot, server-only env, production deploys (Principal-only) |
 
-Rules guide the agent, but **hard rules are enforced by tools, not prose**: the Biome import ban (Base UI), the generated-types header and `gen:types` diff in `ship-check`, the no-Saifuro-call and token-leak greps in `ship-check`, typecheck and tests, and Vinaya's gates once installed.
+Rules guide the agent, but **hard rules are enforced by tools, not prose**: the Biome import ban (Base UI), the generated-types header and `gen:types` diff in `ship-check`, the no-Saifuro-call and token-leak greps in `ship-check`, typecheck and tests, and Vinaya's gates.
 
 ## Workflow skills (on demand)
 
@@ -129,7 +130,7 @@ Canonical content is in `.claude/skills/<name>/SKILL.md`, and `.agents/skills/<n
 
 ## Governance
 
-This repo will be governed by **Vinaya**. Once it's installed, `VINAYA.md` explains the enforcement rings and roles. Work happens on branches through pull requests, never directly on `main`. Commit messages follow the format the commit-msg hook enforces.
+This repo is governed by **Vinaya**. `vinaya doctrine` prints the path to its doctrine (the enforcement rings and roles); `/vinaya <role>` loads a role's part of it. Work happens on branches through pull requests, never directly on `main`. Commit messages follow the format the commit-msg hook enforces.
 
 ## Working agreements
 

@@ -27,5 +27,5 @@ CLAUDE.local.md
 .vercel
 .env*.local
 
-# The development snapshot: a build output (ADR-0008), never committed
+# The development snapshot: a build output, never committed
 src/server/github/dev-snapshot.json

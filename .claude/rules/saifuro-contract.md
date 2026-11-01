@@ -6,13 +6,13 @@ paths:
 
 # Saifuro contract
 
-Policy Lab never calls Saifuro (ADR-0001); its calls are written for real and answered by `mockFetch` (ADR-0009). This rule is what the code may assume about Saifuro, each fact with the docs page it comes from (`https://docs.saifuro.com` + the path). Agents don't fetch those pages during a task: the facts below and `spec/saifuro-openapi.yaml` are the contract. A fact not here and not in the snapshot is not a fact; stop and ask.
+Policy Lab never calls Saifuro; its calls are written for real and answered by `mockFetch`. This rule is what the code may assume about Saifuro, each fact with the docs page it comes from (`https://docs.saifuro.com` + the path). Agents don't fetch those pages during a task: the facts below and `spec/saifuro-openapi.yaml` are the contract. A fact not here and not in the snapshot is not a fact; stop and ask.
 
 ## Types
 - `spec/saifuro-openapi.yaml` is the vendored snapshot (OpenAPI 3.1.0, `info.version: 1.0.0`). Read-only.
-- `bun run gen:types` writes `src/saifuro/schema.d.ts` (openapi-typescript). Commit it, never edit it; `ship-check` regenerates and diffs it (ADR-0002).
+- `bun run gen:types` writes `src/saifuro/schema.d.ts` (openapi-typescript). Commit it, never edit it; `ship-check` regenerates and diffs it.
 - `src/saifuro/types.ts` names the shapes the app uses as aliases of `components["schemas"][…]`. Add an alias there when a new shape is needed; never retype a field.
-- `MandateTerms = Omit<MandateCreate, "agent">` is a policy's terms (ADR-0003).
+- `MandateTerms = Omit<MandateCreate, "agent">` is a policy's terms.
 - `src/saifuro/client.ts` is the one client (`openapi-fetch`, `createClient<paths>`), the only file naming the base URL, and its `fetch` is `mockFetch` from `src/saifuro/mock/`. Both start with `import "server-only"`.
 - `mockFetch` routes by method and path to one handler per call the console makes; each handler returns the schema's response type. Any other path returns Saifuro's 404 error shape. Publishes apply to the visitor's demo state (seed plus the visitor's publish operations, from an httpOnly cookie, last 10).
 
@@ -38,7 +38,7 @@ Policy Lab never calls Saifuro (ADR-0001); its calls are written for real and an
 - Agents are created by developers (out of scope). A disabled agent's mandates stop matching: `deny_no_mandate`.
 
 ## What the API does not have (`/reference/not-built-yet`)
-- **No policies endpoint**: "There is no `/v1/policies`". Policies are ours (ADR-0003); never present one as a Saifuro object.
+- **No policies endpoint**: "There is no `/v1/policies`". Policies are ours; never present one as a Saifuro object.
 - **Reviews can be actioned but not read**: `GET /v1/reviews` and `GET /v1/reviews/{id}` return `404`. A pending review is visible only through the decision that created it and the `decision.review_pending` webhook.
 - **The frequency rule is fixed**: more than 10 requests from one agent in 60 seconds is `deny_velocity`; not a mandate setting, not configurable.
 - **No user management** and no public SDK.

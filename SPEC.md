@@ -24,7 +24,7 @@ The milestone that tracks this goal lives on the forge.
 
 **For:** a finance controller, not an engineer. Engineers get the JSON view.
 
-**The model** (CONTEXT.md; ADR-0003):
+**The model** (CONTEXT.md):
 - An **agent** is created by developers, outside this console. A new agent has no mandate and cannot spend: every request is `deny_no_mandate`.
 - A **mandate** is Saifuro's real per-agent permission: one agent, immutable, revoke plus create to change, fields from `MandateCreate`.
 - A **policy** is the console's layer: a reusable named set of mandate terms (`Omit<MandateCreate, "agent">`) with a name, a version, the agents it is assigned to, and console-only extras: **approved vendors** (tagged "Not enforced by the API yet") and **Slack notify**.
@@ -41,7 +41,7 @@ The milestone that tracks this goal lives on the forge.
 7. **History:** a timeline of versions (number, live or replaced, who, when, note). Compare any two: both sentences, and the change in words ("Approval above 20 → 40 USDC; everything else unchanged"). "Roll back to this version" publishes it again as a new version; history is never rewritten.
 8. **JSON view:** the exact `POST /v1/mandates` bodies, one per assignment, and the `POST /v1/mandates/{id}/revoke` calls a publish would make, labelled "Not sent: this demo is not connected to Saifuro".
 9. **Component playground** (`/system`): every component the app actually uses — and only those — each in its states (default, hover and focus live, disabled, loading, empty, error, every variant the app renders), on fixture data, with a light/dark switch at the top, then the full screens on fixtures. A component joins `/system` in the PR that first uses it. Not linked from the app's navigation.
-10. **Development log** (`/dev-stats`), exactly as Onchain Rewind's, ported from it: this project's own development record (CONTEXT.md) as a product surface — the milestone's progress, the headline numbers, where the time goes between the developer and the reviewers, the guardrail totals, a live "working on it now" line, and every ticket with its rounds expanding to a round-by-round timeline. Read on the server (ADR-0007) from GitHub and the Vinaya log, polled every few seconds from the client; times in the viewer's own zone. A cold visit paints the development snapshot first — the record as the last deploy's build read it through the same two readers (ADR-0008), with a line saying when it was taken — and the live record replaces it in place. When one source fails, the page still renders everything the other gives, with one message naming what is missing and why. Dropped or recut Issues are skipped by one named list. Ends with "Made with Vinaya". The port is a feature task, not part of the bootstrap: Rewind's readers, folds, snapshot writer and leak check, with this repo's name and log URL, server functions turned into route handlers and server-component reads.
+10. **Development log** (`/dev-stats`), exactly as Onchain Rewind's, ported from it: this project's own development record (CONTEXT.md) as a product surface — the milestone's progress, the headline numbers, where the time goes between the developer and the reviewers, the guardrail totals, a live "working on it now" line, and every ticket with its rounds expanding to a round-by-round timeline. Read on the server from GitHub and the Vinaya log, polled every few seconds from the client; times in the viewer's own zone. A cold visit paints the development snapshot first — the record as the last deploy's build read it through the same two readers, with a line saying when it was taken — and the live record replaces it in place. When one source fails, the page still renders everything the other gives, with one message naming what is missing and why. Dropped or recut Issues are skipped by one named list. Ends with "Made with Vinaya". The port is a feature task, not part of the bootstrap: Rewind's readers, folds, snapshot writer and leak check, with this repo's name and log URL, server functions turned into route handlers and server-component reads.
 
 **Words in the UI:** outcomes are **paid**, **waited for you** and **blocked**; "mandate" for Saifuro's object and "policy" for ours, never "rule". Limits are always "per agent". Sentence case, no exclamation marks.
 
@@ -53,14 +53,14 @@ The milestone that tracks this goal lives on the forge.
 
 ## 2. Non-goals (this build)
 
-No calls to Saifuro and no Saifuro keys of any kind (ADR-0001). No agent creation or key management. No review queue (reviews can't be read over the API). No escrow, signature verification, webhooks registration, ledger or onchain views. No accounts, sign-in or database: policies and drafts live in the browser session on top of the sample data.
+No calls to Saifuro and no Saifuro keys of any kind. No agent creation or key management. No review queue (reviews can't be read over the API). No escrow, signature verification, webhooks registration, ledger or onchain views. No accounts, sign-in or database: policies and drafts live in the browser session on top of the sample data.
 
 **Later** (don't build these): shared budgets across agents (the API has none), recipient enforcement (the API has none), policy templates library, shadow mode.
 
 ## 3. Design input
 
 - The **Policy Lab Design System**, linked from [`design/DESIGN.md`](design/DESIGN.md): the look, the screens and the component inventory. The app uses plain shadcn/ui (Base UI flavour) on shadcn's own variables; the design system's own class names are not used.
-- `design/marketing-literal-palette.txt` and `design/docs-theme-vars.txt`: the palette sources behind the token values (ADR-0006).
+- `design/marketing-literal-palette.txt` and `design/docs-theme-vars.txt`: the palette sources behind the token values.
 - `design/RESEARCH-rule-uis.md`: how the best spend-rule screens work, and which pattern goes where.
 
 All three files are read-only. `design/DESIGN.md` is a living doc.
@@ -84,18 +84,18 @@ app/dev-stats  ── server/github, server/vinaya (server-only) ─▶ snapshot
                build: write snapshot → next build → leak check
 ```
 
-Every Saifuro read and write is the real call, typed by the schema; `mockFetch` answers it and nothing leaves the server (ADR-0009). Going live is replacing `mockFetch` with `fetch` in one file, a reviewed change; no environment variable switches it.
+Every Saifuro read and write is the real call, typed by the schema; `mockFetch` answers it and nothing leaves the server. Going live is replacing `mockFetch` with `fetch` in one file, a reviewed change; no environment variable switches it.
 
-**Key decisions** (recorded as ADRs in [`docs/adr/`](docs/adr/)):
-1. **No live Saifuro calls; sample data, labelled** (ADR-0001, amended by ADR-0009).
-2. **Types are generated from a vendored OpenAPI snapshot** (`spec/saifuro-openapi.yaml` → `src/saifuro/schema.d.ts`, ADR-0002).
-3. **A policy is a console layer, saved as one mandate per assignment** (ADR-0003).
-4. **A pure engine sits between data and UI**, for evaluation and simulation (ADR-0004).
-5. **Next.js, Tailwind v4 and shadcn/ui on Base UI** (ADR-0005).
-6. **The look follows Saifuro's console in shadcn's variables, with an honesty badge** (ADR-0006).
-7. **The development record is read on the server** (ADR-0007).
-8. **The development log paints a build-time snapshot first** (ADR-0008).
-9. **Saifuro calls go through one typed client, answered by a mock transport**; pages render on the server (ADR-0009).
+**Key decisions** (each recorded in [`docs/adr/`](docs/adr/)):
+1. **No live Saifuro calls; sample data, labelled**.
+2. **Types are generated from a vendored OpenAPI snapshot** (`spec/saifuro-openapi.yaml` → `src/saifuro/schema.d.ts`).
+3. **A policy is a console layer, saved as one mandate per assignment**.
+4. **A pure engine sits between data and UI**, for evaluation and simulation.
+5. **Next.js, Tailwind v4 and shadcn/ui on Base UI**.
+6. **The look follows Saifuro's console in shadcn's variables, with an honesty badge**.
+7. **The development record is read on the server**.
+8. **The development log paints a build-time snapshot first**.
+9. **Saifuro calls go through one typed client, answered by a mock transport**; pages render on the server.
 
 ## 5. Data mapping (Saifuro → view models)
 
@@ -163,14 +163,14 @@ This spec states what the product is and what it must do. It never lists tasks, 
 ## 10. Decisions
 
 Settled, so the Planner doesn't stop to ask:
-- **No Saifuro connection:** no calls, no keys, sample data labelled (ADR-0001).
-- **Saifuro access:** one typed client (`openapi-fetch` 0.17.0) with `mockFetch` as its transport; pages are server-rendered; publishes are server actions; each visitor's publishes persist in an httpOnly cookie, last 10, with "Reset demo" (ADR-0009).
-- **Stack:** Next.js App Router, React 19, TypeScript strict, Tailwind v4, shadcn/ui Base UI flavour, TanStack Query, openapi-typescript, Vitest, Biome, bun; Vercel later (ADR-0005).
-- **Tokens:** shadcn's standard variables plus success and warning, set to Saifuro's palette; nothing else (ADR-0006).
+- **No Saifuro connection:** no calls, no keys, sample data labelled.
+- **Saifuro access:** one typed client (`openapi-fetch` 0.17.0) with `mockFetch` as its transport; pages are server-rendered; publishes are server actions; each visitor's publishes persist in an httpOnly cookie, last 10, with "Reset demo".
+- **Stack:** Next.js App Router, React 19, TypeScript strict, Tailwind v4, shadcn/ui Base UI flavour, TanStack Query, openapi-typescript, Vitest, Biome, bun; Vercel later.
+- **Tokens:** shadcn's standard variables plus success and warning, set to Saifuro's palette; nothing else.
 - **Components:** added from shadcn's Base UI flavour only when a screen needs one, and shown on `/system` from the same PR.
 - **The table:** shadcn's Data Table — TanStack Table (`@tanstack/react-table` 8.21.3, pinned; the v8 API shadcn's guide uses) with shadcn's `Table`, as in shadcn's tasks example — one shared component for every table in the app.
-- **Policies are assigned to agents**, one mandate per assignment; versions are per policy (ADR-0003).
-- **`/dev-stats` is in scope**, ported from Onchain Rewind, snapshot included (ADR-0007, ADR-0008).
+- **Policies are assigned to agents**, one mandate per assignment; versions are per policy.
+- **`/dev-stats` is in scope**, ported from Onchain Rewind, snapshot included.
 - **Outcome words:** paid / waited for you / blocked.
 - **Currency in the sample data:** USDC.
 

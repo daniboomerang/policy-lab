@@ -49,10 +49,21 @@ jobs:
       # `next typegen` writes next-env.d.ts and the route types before tsc reads them.
       - run: bun run check:types
 
+  test:
+    name: Check tests (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+
   checks:
     name: checks
     runs-on: ubuntu-latest
-    needs: [format, lint, types]
+    needs: [format, lint, types, test]
     if: always()
     steps:
       - run: |
